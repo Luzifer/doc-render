@@ -42,20 +42,6 @@
               v-for="field in docFields"
               :key="field.name"
             >
-              <!-- String, single-line -->
-              <div
-                v-if="field.type === 'string' && field.format !== 'multiline'"
-                class="mb-3"
-              >
-                <label :for="`field-${field.name}`">{{ field.description }}</label>
-                <input
-                  :id="`field-${field.name}`"
-                  v-model="model[field.name]"
-                  type="text"
-                  :class="`form-control ${fieldValidClass(field.name)}`"
-                >
-              </div>
-
               <!-- String, multi-line -->
               <div
                 v-if="field.type === 'string' && field.format === 'multiline'"
@@ -69,9 +55,44 @@
                 />
               </div>
 
+              <!-- String, enum -->
+              <div
+                v-else-if="field.type === 'string' && field.enum"
+                class="mb-3"
+              >
+                <label :for="`field-${field.name}`">{{ field.description }}</label>
+                <select
+                  :id="`field-${field.name}`"
+                  v-model="model[field.name]"
+                  :class="`form-select ${fieldValidClass(field.name)}`"
+                >
+                  <option
+                    v-for="opt in field.enum"
+                    :key="opt"
+                    :value="opt"
+                  >
+                    {{ opt }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- String, single-line -->
+              <div
+                v-else-if="field.type === 'string'"
+                class="mb-3"
+              >
+                <label :for="`field-${field.name}`">{{ field.description }}</label>
+                <input
+                  :id="`field-${field.name}`"
+                  v-model="model[field.name]"
+                  type="text"
+                  :class="`form-control ${fieldValidClass(field.name)}`"
+                >
+              </div>
+
               <!-- Boolean -->
               <div
-                v-if="field.type === 'boolean'"
+                v-else-if="field.type === 'boolean'"
                 class="form-check form-switch mb-3"
               >
                 <input
@@ -85,7 +106,7 @@
 
               <!-- Number -->
               <div
-                v-if="field.type === 'number' || field.format === 'integer'"
+                v-else-if="field.type === 'number' || field.format === 'integer'"
                 class="mb-3"
               >
                 <label :for="`field-${field.name}`">{{ field.description }}</label>
@@ -178,39 +199,32 @@ export default defineComponent({
     modelFieldValid(): Record<string, boolean> {
       const validity = {}
 
-      for (const field of this.docFields) {
-        if (!field.required) {
-          validity[field.name] = true
-          continue
-        }
+      if (!this.selectedSet || !this.docFields) {
+        return validity
+      }
 
-        if (this.model[field.name] === this.defaultForType(field.type)) {
+      for (const field of this.docFields) {
+        // By default assume the field to be valid
+        validity[field.name] = true
+
+        if (field.required && this.model[field.name] === this.defaultForType(field.type)) {
           validity[field.name] = false
           continue
         }
 
-        validity[field.name] = true
+        if (field.pattern && !this.model[field.name].match(new RegExp(field.pattern))) {
+          validity[field.name] = false
+          continue
+        }
       }
 
       return validity
     },
 
     modelValid(): boolean {
-      if (!this.selectedSet || !this.docFields) {
-        return false
-      }
-
-      for (const field of this.docFields) {
-        if (!field.required) {
-          continue
-        }
-
-        if (this.model[field.name] === this.defaultForType(field.type)) {
-          return false
-        }
-      }
-
-      return true
+      return Object.entries(this.modelFieldValid)
+        .filter(e => !e[1])
+        .length === 0
     },
   },
 
@@ -259,7 +273,7 @@ export default defineComponent({
     },
 
     fieldValidClass(fieldName: string): string {
-      return this.modelFieldValid[fieldName] ? 'is-valid' : 'is-invalid'
+      return this.modelFieldValid[fieldName] ? '' : 'is-invalid'
     },
 
     readRecipients(): void {
