@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doc-generator.luzifer.io/demo.schema.json",
+  "title": "Demo",
+  "description": "Demo  Letter",
+  "type": "object",
+  "properties": {
+    "address": {
+      "description": "Address",
+      "type": "string",
+      "format": "multiline"
+    },
+    "date": {
+      "description": "Date Override (defaults to today, Format D. MMM YYYY)",
+      "type": "string"
+    },
+    "subject": {
+      "description": "Subject",
+      "type": "string"
+    },
+    "text": {
+      "description": "Body of the Letter",
+      "format": "multiline",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "address",
+    "subject",
+    "text"
+  ]
+}

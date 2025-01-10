@@ -3,4 +3,4 @@ node_modules
 pkg/frontend/assets/*
 !pkg/frontend/assets/index.html
 source
-source/main.tex
+!source/demo

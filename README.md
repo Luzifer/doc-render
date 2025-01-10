@@ -2,6 +2,8 @@
 
 `doc-render` is a small webservice serving as a UI to the [`tex-api`](https://github.com/luzifer/tex-api). While the `tex-api` does the heavy-lifting of rendering the LaTeX document into a PDF this provides an UI for the user to interact with LaTeX templates: templates are defined as a LaTeX file in Go-Templating format, a JSON-Schema defining the fields of the template for the frontend to generate a form and optionally some additional files like logo, wallpapers or font files.
 
+![](docs/screenshot.png)
+
 ## Template structure
 
 ```
