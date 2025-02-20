@@ -121,31 +121,91 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-body">
-            <div class="input-group">
-              <label
-                class="input-group-text"
-                for="recipientfile"
-              >Adress-Datei (CSV)</label>
-              <input
-                id="recipientfile"
-                ref="csvInput"
-                type="file"
-                class="form-control"
-                accept=".csv"
-                @change="readRecipients"
-              >
+        <div
+          id="extraFields"
+          class="accordion"
+        >
+          <!-- Add addresses -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
               <button
-                class="btn btn-danger"
-                @click="clearRecipients"
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#accAddress"
               >
-                <i class="fas fa-trash fa-fw" />
+                Serienbrief-Adressen hinzufügen
               </button>
+            </h2>
+            <div
+              id="accAddress"
+              class="accordion-collapse collapse"
+              data-bs-parent="#extraFields"
+            >
+              <div class="accordion-body">
+                <div class="input-group">
+                  <input
+                    id="recipientfile"
+                    ref="csvInput"
+                    type="file"
+                    class="form-control"
+                    accept=".csv"
+                    @change="readRecipients"
+                  >
+                  <button
+                    class="btn btn-danger"
+                    @click="clearRecipients"
+                  >
+                    <i class="fas fa-trash fa-fw" />
+                  </button>
+                </div>
+                <p class="mb-0 form-text">
+                  Erwartete Felder: <code>NACHNAME;VORNAME;STRASSE;HAUSNR;PLZ;ORT</code>, Trenner <code>;</code>, eine Zeile pro Adresse
+                </p>
+              </div>
             </div>
-            <p class="mb-0 form-text">
-              Erwartete Felder: <code>NACHNAME;VORNAME;STRASSE;HAUSNR;PLZ;ORT</code>, Trenner <code>;</code>, eine Zeile pro Adresse
-            </p>
+          </div>
+
+          <!-- Template -->
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#loadTemplate"
+              >
+                Vorlage laden / speichern...
+              </button>
+            </h2>
+            <div
+              id="loadTemplate"
+              class="accordion-collapse collapse"
+              data-bs-parent="#extraFields"
+            >
+              <div class="accordion-body">
+                <div class="input-group mb-3">
+                  <input
+                    id="templatefile"
+                    ref="templateFileInput"
+                    type="file"
+                    class="form-control"
+                    accept=".json"
+                    @change="readTemplateFromFile"
+                  >
+                </div>
+                <div class="">
+                  <a
+                    class="btn form-control btn-primary"
+                    :href="templateContentURL"
+                    :download="selectedSet"
+                  >
+                    <i class="fas fa-download fa-fw me-1" />
+                    Speichern...
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -171,6 +231,7 @@
 </template>
 
 <script lang="ts">
+import { Collapse } from 'bootstrap'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
@@ -226,6 +287,14 @@ export default defineComponent({
         .filter(e => !e[1])
         .length === 0
     },
+
+    templateContentURL(): string {
+      const data = {
+        fields: this.model,
+        type: this.selectedSet,
+      }
+      return `data:application/json,${JSON.stringify(data)}`
+    },
   },
 
   data() {
@@ -233,6 +302,7 @@ export default defineComponent({
       displayURL: '',
       documentLoading: false,
       model: {} as any,
+      modelPrefill: {} as any,
       recipients: null as null | string,
       selectedSet: '',
       sourceSets: {} as any,
@@ -276,6 +346,11 @@ export default defineComponent({
       return this.modelFieldValid[fieldName] ? '' : 'is-invalid'
     },
 
+    loadTemplate(src: any): void {
+      this.selectedSet = src.type
+      this.modelPrefill = src.fields
+    },
+
     readRecipients(): void {
       if ((this.$refs.csvInput.files?.length || 0) < 1) {
         this.recipients = null
@@ -287,6 +362,24 @@ export default defineComponent({
         .then((csvContent: string) => {
           this.recipients = csvContent
         })
+    },
+
+    readTemplateFromFile(): void {
+      if ((this.$refs.templateFileInput?.files?.length || 0) < 1) {
+        console.warn(`loading template without files`)
+        return
+      }
+
+      const file = this.$refs.templateFileInput.files[0] as File
+      file.text()
+        .then((content: string) => JSON.parse(content))
+        .then((template: any) => this.loadTemplate(template))
+    },
+
+    readTemplateFromURL(url: string): void {
+      fetch(url)
+        .then((resp: Response) => resp.json())
+        .then((template: any) => this.loadTemplate(template))
     },
 
     render(): Promise<void> | undefined {
@@ -316,6 +409,17 @@ export default defineComponent({
 
   mounted(): void {
     this.fetchSourceSets()
+
+    const collapseElementList = document.querySelectorAll('.collapse')
+    for (const collapseEl of collapseElementList) {
+      new Collapse(collapseEl, { toggle: false })
+    }
+
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    if (hashParams.has('tplsrc')) {
+      // Load after giving a tiny bit of time for the watcher not to escalate
+      window.setTimeout(() => this.readTemplateFromURL(hashParams.get('tplsrc')), 100)
+    }
   },
 
   name: 'DocRenderApp',
@@ -326,7 +430,7 @@ export default defineComponent({
       const model = {}
 
       for (const field of Object.entries(fields) as Array<Array<any>>) {
-        model[field[0]] = this.defaultForType(field[1].type, field[1].default)
+        model[field[0]] = this.modelPrefill[field[0]] ? this.modelPrefill[field[0]] : this.defaultForType(field[1].type, field[1].default)
       }
 
       this.model = model
