@@ -231,6 +231,7 @@
 </template>
 
 <script lang="ts">
+import { Base64 } from 'js-base64'
 import { Collapse } from 'bootstrap'
 import { defineComponent } from 'vue'
 
@@ -293,7 +294,7 @@ export default defineComponent({
         fields: this.model,
         type: this.selectedSet,
       }
-      return `data:application/json,${JSON.stringify(data)}`
+      return `data:application/json;base64,${Base64.encode(JSON.stringify(data))}`
     },
   },
 
