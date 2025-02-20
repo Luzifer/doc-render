@@ -1,3 +1,9 @@
+# 0.4.0 / 2025-02-20
+
+  * Fix: Use default section variants
+  * Add shortcode for `\part`
+  * Fix: Encode template on download
+
 # 0.3.0 / 2025-02-20
 
   * Add handling for templates via upload / URL
