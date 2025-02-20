@@ -127,7 +127,7 @@
               <label
                 class="input-group-text"
                 for="recipientfile"
-              >Adress-Datei für Seriendokumente (CSV)</label>
+              >Adress-Datei (CSV)</label>
               <input
                 id="recipientfile"
                 ref="csvInput"
