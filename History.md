@@ -1,3 +1,8 @@
+# 0.3.0 / 2025-02-20
+
+  * Add handling for templates via upload / URL
+  * Shorten label for address file
+
 # 0.2.1 / 2025-02-13
 
   * Update Node dependencies
