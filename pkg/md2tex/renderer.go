@@ -177,13 +177,13 @@ func (generator) renderHeading(w util.BufWriter, _ []byte, node ast.Node, enteri
 	var (
 		n        = node.(*ast.Heading)
 		headings = []string{
-			"",               // SKIP
-			"section*",       // H1
-			"subsection*",    // H2
-			"subsubsection*", // H3
-			"paragraph*",     // H4
-			"subparagraph*",  // H5
-			"textbf",         // H6
+			"",              // SKIP
+			"section",       // H1
+			"subsection",    // H2
+			"subsubsection", // H3
+			"paragraph",     // H4
+			"subparagraph",  // H5
+			"textbf",        // H6
 		}
 	)
 
