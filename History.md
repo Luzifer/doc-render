@@ -1,3 +1,7 @@
+# 0.5.0 / 2025-02-22
+
+  * Rewrite shortcode logic to use Go templating
+
 # 0.4.0 / 2025-02-20
 
   * Fix: Use default section variants
