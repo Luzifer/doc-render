@@ -1,28 +1,48 @@
 package md2tex
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
-	"strings"
+	"text/template"
 )
 
 var (
-	shortCodes = map[string]shortCode{
+	shortCodes = template.FuncMap{
 		"graphic": shortCodeGraphic,
 		"part":    shortCodePart,
+		"raw":     shortCodeRaw,
 		"vspace":  shortCodeVSpace,
 	}
 	shortCodeDef = regexp.MustCompile(`{% (.*?) %}`)
 )
 
-func shortCodeGraphic(args []string) (string, error) {
-	return fmt.Sprintf(`\includegraphics{%s}`, args[1]), nil
+func renderShortCode(content string) (string, error) {
+	tpl, err := template.New("shortCode").
+		Funcs(shortCodes).
+		Parse(fmt.Sprintf(`{{- %s -}}`, content))
+	if err != nil {
+		return "", fmt.Errorf("parsing template: %w", err)
+	}
+
+	buf := new(bytes.Buffer)
+	if err = tpl.Execute(buf, nil); err != nil {
+		return "", fmt.Errorf("executing template: %w", err)
+	}
+
+	return buf.String(), nil
 }
 
-func shortCodePart(args []string) (string, error) {
-	return fmt.Sprintf(`\part{%s}`, strings.Join(args[1:], " ")), nil
+func shortCodeGraphic(path string) string {
+	return fmt.Sprintf(`\includegraphics{%s}`, path)
 }
 
-func shortCodeVSpace(args []string) (string, error) {
-	return fmt.Sprintf(`\vspace{%s}`, args[1]), nil
+func shortCodePart(title string) string {
+	return fmt.Sprintf(`\part{%s}`, title)
+}
+
+func shortCodeRaw(latex string) string { return latex }
+
+func shortCodeVSpace(dist string) string {
+	return fmt.Sprintf(`\vspace{%s}`, dist)
 }

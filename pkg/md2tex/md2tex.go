@@ -13,10 +13,6 @@ import (
 
 const prio = 1000
 
-type (
-	shortCode func([]string) (string, error)
-)
-
 // Convert takes a Markdown document and returns LaTex source from it
 func Convert(md []byte) (tex []byte, err error) {
 	rd := renderer.NewRenderer(renderer.WithNodeRenderers(util.Prioritized(newGenerator(), prio)))

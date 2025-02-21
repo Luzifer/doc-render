@@ -5,7 +5,6 @@ package md2tex
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/renderer"
@@ -333,15 +332,9 @@ func (g generator) replaceShortCode(value []byte) []byte {
 
 	match := shortCodeDef.FindSubmatch(value)
 
-	args := strings.Fields(string(match[1]))
-	sc, ok := shortCodes[args[0]]
-	if !ok {
-		return value
-	}
-
-	repl, err := sc(args)
+	repl, err := renderShortCode(string(match[1]))
 	if err != nil {
-		return []byte(fmt.Sprintf("%% Shortcode %q error: %s", args[0], err))
+		return []byte(fmt.Sprintf("%% Shortcode error: %s\n%% %s", err, match[1]))
 	}
 
 	return []byte(repl)
