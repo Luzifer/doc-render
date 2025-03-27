@@ -12,4 +12,4 @@ frontend_lint: node_modules
 		src
 
 node_modules:
-	npm ci --include dev
+	yarn install --production=false --frozen-lockfile

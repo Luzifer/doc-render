@@ -1,7 +1,7 @@
 # Install Node deps on change of package.json
 local_resource(
-  'npm',
-  cmd='npm i',
+  'yarn',
+  cmd='yarn install',
   deps=['package.json'],
 )
 
@@ -10,7 +10,7 @@ local_resource(
   'frontend',
   cmd='node ./ci/build.mjs',
   deps=['src'],
-  resource_deps=['npm'],
+  resource_deps=['yarn'],
 )
 
 # Rebuild and run Go webserver on code changes

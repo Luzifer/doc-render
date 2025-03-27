@@ -8,7 +8,7 @@ RUN set -ex \
       git \
       make \
       nodejs \
-      npm \
+      yarn \
  && make frontend_prod \
  && go install \
       -ldflags "-X main.version=$(git describe --tags --always || echo dev)" \
