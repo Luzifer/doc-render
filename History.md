@@ -1,3 +1,8 @@
+# 0.5.1 / 2025-03-27
+
+  * Update Go dependencies
+  * Update node dependencies
+
 # 0.5.0 / 2025-02-22
 
   * Rewrite shortcode logic to use Go templating
