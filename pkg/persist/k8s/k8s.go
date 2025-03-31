@@ -62,6 +62,10 @@ func (b *Backend) Get(uid string) (templateJSON []byte, err error) {
 func (b *Backend) Store(templateJSON []byte) (uid string, err error) {
 	uid = b.contentHash(templateJSON)
 
+	if _, err = b.Get(uid); err == nil {
+		return uid, nil
+	}
+
 	if _, err = b.c.CoreV1().
 		ConfigMaps(os.Getenv("PERSIST_NAMESPACE")).
 		Create(context.Background(), &coreV1.ConfigMap{
