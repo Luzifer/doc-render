@@ -9,8 +9,9 @@ import (
 	"os"
 
 	"github.com/Luzifer/doc-render/pkg/persist"
-	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	applyCoreV1 "k8s.io/client-go/applyconfigurations/core/v1"
+	applyMetaV1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -64,15 +65,15 @@ func (b *Backend) Store(templateJSON []byte) (uid string, err error) {
 
 	if _, err = b.c.CoreV1().
 		ConfigMaps(os.Getenv("PERSIST_NAMESPACE")).
-		Create(context.Background(), &coreV1.ConfigMap{
-			ObjectMeta: metaV1.ObjectMeta{
-				Name:      b.cmName(uid),
-				Namespace: os.Getenv("PERSIST_NAMESPACE"),
+		Apply(context.Background(), &applyCoreV1.ConfigMapApplyConfiguration{
+			ObjectMetaApplyConfiguration: &applyMetaV1.ObjectMetaApplyConfiguration{
+				Name:      ptr(b.cmName(uid)),
+				Namespace: ptr(os.Getenv("PERSIST_NAMESPACE")),
 			},
 			Data: map[string]string{
 				"template": string(templateJSON),
 			},
-		}, metaV1.CreateOptions{}); err != nil {
+		}, metaV1.ApplyOptions{}); err != nil {
 		return "", fmt.Errorf("creating config-map: %w", err)
 	}
 
@@ -88,3 +89,5 @@ func (Backend) contentHash(templateJSON []byte) string {
 	// we use sha1-hashes in this backend
 	return fmt.Sprintf("%x", sha1.Sum(templateJSON)) //#nosec G401: Used for content hash, not crypto
 }
+
+func ptr[T comparable](v T) *T { return &v }
