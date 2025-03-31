@@ -73,7 +73,9 @@ func (b *Backend) Store(templateJSON []byte) (uid string, err error) {
 			Data: map[string]string{
 				"template": string(templateJSON),
 			},
-		}, metaV1.ApplyOptions{}); err != nil {
+		}, metaV1.ApplyOptions{
+			FieldManager: "application/apply-patch",
+		}); err != nil {
 		return "", fmt.Errorf("creating config-map: %w", err)
 	}
 
