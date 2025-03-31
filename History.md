@@ -1,3 +1,9 @@
+# 0.7.3 / 2025-03-31
+
+  * Fix: Try to read the CM before creating
+  * Revert "Fix: Allow storing even though CM already exists"
+  * Revert "Fix: Set field-manager for apply"
+
 # 0.7.2 / 2025-03-31
 
   * Fix: Set field-manager for apply
