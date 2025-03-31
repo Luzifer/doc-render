@@ -1,3 +1,7 @@
+# 0.7.0 / 2025-03-31
+
+  * Add k8s internal storage using config-maps
+
 # 0.6.0 / 2025-03-31
 
   * Add server-side storage of templates
