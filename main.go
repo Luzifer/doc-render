@@ -7,6 +7,8 @@ import (
 
 	"github.com/Luzifer/doc-render/pkg/api"
 	"github.com/Luzifer/doc-render/pkg/frontend"
+	"github.com/Luzifer/doc-render/pkg/persist/mem"
+	"github.com/Luzifer/doc-render/pkg/persist/redis"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -19,6 +21,7 @@ var (
 	cfg = struct {
 		Listen          string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
 		LogLevel        string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
+		PersistTo       string `flag:"persist-to" default:"disable" description:"Where to store server-side templates (disable, redis)"`
 		SourceSetFolder string `flag:"source-set-folder" default:"source" description:"Where to find the templates to render"`
 		TexAPIJobURL    string `flag:"tex-api-job-url" default:"" description:"Where to find the job endpoint of the TeX-API"`
 		VersionAndExit  bool   `flag:"version" default:"false" description:"Prints current version and exits"`
@@ -55,10 +58,30 @@ func main() {
 
 	r := mux.NewRouter()
 
-	apiHandler := api.New(
+	apiOpts := []api.Option{
 		api.WithSourceSetDir(cfg.SourceSetFolder),
 		api.WithTexAPIJobURL(cfg.TexAPIJobURL),
-	)
+	}
+
+	switch cfg.PersistTo {
+	case "disable", "":
+		// Nothing to do, persistence is disabled
+
+	case "mem":
+		apiOpts = append(apiOpts, api.WithPersistBackend(mem.New()))
+
+	case "redis":
+		backend, err := redis.New()
+		if err != nil {
+			logrus.WithError(err).Fatal("creating redis backend")
+		}
+		apiOpts = append(apiOpts, api.WithPersistBackend(backend))
+
+	default:
+		logrus.Fatal("invalid persist-to backend")
+	}
+
+	apiHandler := api.New(apiOpts...)
 	apiHandler.Register(r)
 
 	frontendHandler := frontend.New()

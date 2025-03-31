@@ -194,15 +194,25 @@
                     @change="readTemplateFromFile"
                   >
                 </div>
-                <div class="">
-                  <a
-                    class="btn form-control btn-primary"
-                    :href="templateContentURL"
-                    :download="selectedSet"
-                  >
-                    <i class="fas fa-download fa-fw me-1" />
-                    Speichern...
-                  </a>
+                <div class="d-grid">
+                  <div class="btn-group">
+                    <a
+                      class="btn btn-primary"
+                      :href="templateContentURL"
+                      :download="selectedSet"
+                    >
+                      <i class="fas fa-download fa-fw me-1" />
+                      Herunterladen...
+                    </a>
+                    <button
+                      v-if="config.hasPersist"
+                      :class="{'btn': true, 'btn-primary': !copySuccess, 'btn-success': copySuccess}"
+                      @click="storeServer"
+                    >
+                      <i class="fas fa-cloud fa-fw me-1" />
+                      Link kopieren...
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -289,17 +299,22 @@ export default defineComponent({
         .length === 0
     },
 
-    templateContentURL(): string {
-      const data = {
+    template(): string {
+      return JSON.stringify({
         fields: this.model,
         type: this.selectedSet,
-      }
-      return `data:application/json;base64,${Base64.encode(JSON.stringify(data))}`
+      })
+    },
+
+    templateContentURL(): string {
+      return `data:application/json;base64,${Base64.encode(this.template)}`
     },
   },
 
   data() {
     return {
+      config: {} as any,
+      copySuccess: false,
       displayURL: '',
       documentLoading: false,
       model: {} as any,
@@ -331,6 +346,16 @@ export default defineComponent({
       case 'integer':
         return 0
       }
+    },
+
+    fetchConfig(): Promise<void> {
+      return fetch('/api/config', {
+        credentials: 'include',
+      })
+        .then((resp: Response) => resp.json())
+        .then((data: any) => {
+          this.config = data
+        })
     },
 
     fetchSourceSets(): Promise<void> {
@@ -406,10 +431,27 @@ export default defineComponent({
           this.documentLoading = false
         })
     },
+
+    storeServer(): Promise<void> {
+      return fetch('/api/persist', {
+        body: this.template,
+        credentials: 'include',
+        method: 'POST',
+      })
+        .then((resp: Response) => resp.json())
+        .then((data: any) => navigator.clipboard.writeText(`${window.location.href.split('#')[0]}#p=${data.uid}`))
+        .then(() => {
+          this.copySuccess = true
+          window.setTimeout(() => {
+            this.copySuccess = false
+          }, 3000)
+        })
+    },
   },
 
   mounted(): void {
     this.fetchSourceSets()
+    this.fetchConfig()
 
     const collapseElementList = document.querySelectorAll('.collapse')
     for (const collapseEl of collapseElementList) {
@@ -420,6 +462,11 @@ export default defineComponent({
     if (hashParams.has('tplsrc')) {
       // Load after giving a tiny bit of time for the watcher not to escalate
       window.setTimeout(() => this.readTemplateFromURL(hashParams.get('tplsrc')), 100)
+    }
+    if (hashParams.has('p')) {
+      // Load after giving a tiny bit of time for the watcher not to escalate
+      const uri = `/api/persist/${hashParams.get('p')}`
+      window.setTimeout(() => this.readTemplateFromURL(uri), 100)
     }
   },
 

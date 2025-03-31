@@ -3,13 +3,9 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"strings"
 
-	"github.com/Luzifer/doc-render/pkg/latex"
-	"github.com/Luzifer/doc-render/pkg/recipientcsv"
+	"github.com/Luzifer/doc-render/pkg/persist"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -21,8 +17,9 @@ type (
 
 	// Server represents the API server holding the methods for the routes
 	Server struct {
-		sourceSetDir string
-		texAPIJobURL string
+		persistBackend persist.Backend
+		sourceSetDir   string
+		texAPIJobURL   string
 	}
 
 	renderRequest struct {
@@ -42,6 +39,11 @@ func New(opts ...Option) *Server {
 	return s
 }
 
+// WithPersistBackend configures a backend to persist templates in
+func WithPersistBackend(backend persist.Backend) Option {
+	return func(s *Server) { s.persistBackend = backend }
+}
+
 // WithSourceSetDir configures the base-path of the source-set directory
 func WithSourceSetDir(dir string) Option {
 	return func(s *Server) { s.sourceSetDir = dir }
@@ -56,71 +58,15 @@ func WithTexAPIJobURL(url string) Option {
 func (s Server) Register(r *mux.Router) {
 	sr := r.PathPrefix("/api").Subrouter()
 	sr.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+
+	sr.HandleFunc("/config", s.handleConfigRoute).Methods(http.MethodGet)
+
+	sr.HandleFunc("/persist", s.handlePersistCreate).Methods(http.MethodPost)
+	sr.HandleFunc("/persist/{uid}", s.handlePersistGet).Methods(http.MethodGet)
+
 	sr.HandleFunc("/render/{sourceset}", s.handleRenderRoute).Methods(http.MethodPost)
+
 	sr.HandleFunc("/sets", s.handleSourceSetRoute).Methods(http.MethodGet)
-}
-
-func (s Server) handleRenderRoute(w http.ResponseWriter, r *http.Request) {
-	var (
-		addrTo    = []recipientcsv.Person{{}}
-		err       error
-		payload   renderRequest
-		sourceSet = mux.Vars(r)["sourceset"]
-	)
-
-	if ct, _, _ := strings.Cut(r.Header.Get("Content-Type"), ";"); ct != "application/json" {
-		s.respondJSON(w, http.StatusBadRequest, fmt.Errorf("invalid payload type %q", ct), nil)
-		return
-	}
-
-	if err = json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		s.respondJSON(w, http.StatusBadRequest, fmt.Errorf("parsing request payload: %w", err), nil)
-		return
-	}
-
-	if payload.FoxCSV != nil {
-		if addrTo, err = recipientcsv.Parse(strings.NewReader(*payload.FoxCSV)); err != nil {
-			s.respondJSON(w, http.StatusBadRequest, fmt.Errorf("parsing FoxCSV: %w", err), nil)
-			return
-		}
-	}
-
-	// Generate document
-	pdf, err := latex.Render(r.Context(), latex.RenderOpts{
-		TexAPIURL: s.texAPIJobURL,
-
-		SourceBaseFolder: s.sourceSetDir,
-		SourceSet:        sourceSet,
-
-		Recipients: addrTo,
-		Values:     payload.Values,
-	})
-	if err != nil {
-		s.respondJSON(w, http.StatusInternalServerError, fmt.Errorf("rendering PDF: %w", err), nil)
-		return
-	}
-	defer func() {
-		if err := pdf.Close(); err != nil {
-			logrus.WithError(err).Error("closing PDF reader")
-		}
-	}()
-
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Cache-Control", "no-cache")
-
-	if _, err = io.Copy(w, pdf); err != nil {
-		logrus.WithError(err).Error("copying PDF to remote browser")
-	}
-}
-
-func (s Server) handleSourceSetRoute(w http.ResponseWriter, _ *http.Request) {
-	sets, err := latex.GetSourceSets(s.sourceSetDir)
-	if err != nil {
-		s.respondJSON(w, http.StatusInternalServerError, fmt.Errorf("getting source sets: %w", err), nil)
-		return
-	}
-
-	s.respondJSON(w, http.StatusOK, nil, sets)
 }
 
 func (Server) respondJSON(w http.ResponseWriter, status int, err error, data any) {
@@ -146,6 +92,7 @@ func (Server) respondJSON(w http.ResponseWriter, status int, err error, data any
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	if err = json.NewEncoder(w).Encode(data); err != nil {
 		logger.WithError(err).Error("encoding response")
 	}
