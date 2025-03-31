@@ -1,3 +1,7 @@
+# 0.6.0 / 2025-03-31
+
+  * Add server-side storage of templates
+
 # 0.5.1 / 2025-03-27
 
   * Update Go dependencies
