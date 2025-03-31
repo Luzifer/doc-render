@@ -7,6 +7,7 @@ import (
 
 	"github.com/Luzifer/doc-render/pkg/api"
 	"github.com/Luzifer/doc-render/pkg/frontend"
+	"github.com/Luzifer/doc-render/pkg/persist/k8s"
 	"github.com/Luzifer/doc-render/pkg/persist/mem"
 	"github.com/Luzifer/doc-render/pkg/persist/redis"
 	"github.com/gorilla/mux"
@@ -21,7 +22,7 @@ var (
 	cfg = struct {
 		Listen          string `flag:"listen" default:":3000" description:"Port/IP to listen on"`
 		LogLevel        string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
-		PersistTo       string `flag:"persist-to" default:"disable" description:"Where to store server-side templates (disable, redis)"`
+		PersistTo       string `flag:"persist-to" default:"disable" description:"Where to store server-side templates (disable, k8s, mem, redis)"`
 		SourceSetFolder string `flag:"source-set-folder" default:"source" description:"Where to find the templates to render"`
 		TexAPIJobURL    string `flag:"tex-api-job-url" default:"" description:"Where to find the job endpoint of the TeX-API"`
 		VersionAndExit  bool   `flag:"version" default:"false" description:"Prints current version and exits"`
@@ -66,6 +67,13 @@ func main() {
 	switch cfg.PersistTo {
 	case "disable", "":
 		// Nothing to do, persistence is disabled
+
+	case "k8s":
+		backend, err := k8s.New()
+		if err != nil {
+			logrus.WithError(err).Fatal("creating k8s backend")
+		}
+		apiOpts = append(apiOpts, api.WithPersistBackend(backend))
 
 	case "mem":
 		apiOpts = append(apiOpts, api.WithPersistBackend(mem.New()))
