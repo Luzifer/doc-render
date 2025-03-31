@@ -1,6 +1,7 @@
 module github.com/Luzifer/doc-render
 
 go 1.23.4
+toolchain go1.24.1
 
 require (
 	github.com/Luzifer/go_helpers/v2 v2.25.0
@@ -55,7 +56,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
