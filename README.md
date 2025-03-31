@@ -24,3 +24,14 @@ templates
   - `required` properties must have non-empty values
   - Properties having a `default` will display that default in the frontend.
 - Additional files can be provided and will be available during rendering
+
+## Server-side storage of pre-filled values
+
+When enabled during deployment `doc-render` allows to store the values filled inside the templates on the server and generate a link to retrieve those values again. The following backends are available:
+
+- `k8s` - Store the values as ConfigMap objects inside the Kubernetes cluster
+  - Set `PERSIST_NAMESPACE` to the namespace the ConfigMap objects should be created in
+- `mem` - Store the values in an in-memory map (restarting the server will wipe the storage)
+- `redis` - Store the values in a Redis instance
+  - Set `PERSIST_REDIS` to a redis connection URL ([]`redis://<user>:<password>@<host>:<port>/<db_number>`](https://pkg.go.dev/github.com/redis/go-redis/v9@v9.7.3#ParseURL))
+  - Optionally set `PERSIST_REDIS_PREFIX` to a prefix to prepend the object keys
