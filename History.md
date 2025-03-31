@@ -1,3 +1,8 @@
+# 0.7.1 / 2025-03-31
+
+  * Update Go dependencies
+  * Fix: Allow storing even though CM already exists
+
 # 0.7.0 / 2025-03-31
 
   * Add k8s internal storage using config-maps
