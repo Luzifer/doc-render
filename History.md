@@ -1,3 +1,7 @@
+# 0.7.4 / 2025-09-06
+
+  * fix: do not require required fields
+
 # 0.7.3 / 2025-03-31
 
   * Fix: Try to read the CM before creating
