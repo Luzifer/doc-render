@@ -258,7 +258,7 @@ export default defineComponent({
         .map((e: any[]) => ({
           ...e[1],
           name: e[0],
-          required: set.required.includes(e[0]),
+          required: set.required?.includes(e[0]),
         }))
     },
 
